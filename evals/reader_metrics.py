@@ -24,8 +24,9 @@ OPENERS = [
     r"물론입니다", r"안녕하세요",
 ]
 CLOSERS = [
-    r"도움이 (되길|되었으면)", r"말씀해 주세요", r"편하게 (물어|말씀)",
+    r"도움이 (되길|되었으면)", r"말씀해 ?주(세요|시면)", r"편하게 (물어|말씀)",
     r"궁금한 (점|것)이 (있으시면|있으면)", r"추가로 (궁금|필요)",
+    r"알려 ?주시면", r"다듬어 ?드(릴|리겠)", r"도와 ?드리겠", r"언제든(지)? (물어|말씀|문의)",
 ]
 STOCK = [
     r"강력한", r"혁신적", r"획기적", r"원활하게", r"매끄럽게", r"효율적으로",
@@ -84,7 +85,26 @@ def analyze(text, max_eojeol=25):
         "closers": count_hits(CLOSERS, body),
         "stock_phrases": count_hits(STOCK, body),
         "nominalizations": count_hits(NOMINALIZATION, body),
+        "end_formal": tone_counts(text)[0],
+        "end_polite": tone_counts(text)[1],
+        "end_plain": tone_counts(text)[2],
     }
+
+
+def tone_counts(text):
+    """Count sentence endings: formal (-니다), polite (-요), plain (-다, not -니다), other."""
+    formal = polite = plain = other = 0
+    for sent in split_sentences(text):
+        end = re.sub(r"[\s\"'`)\]*_.!?:]+$", "", sent)
+        if end.endswith("니다") or end.endswith("니까"):
+            formal += 1
+        elif end.endswith("요"):
+            polite += 1
+        elif end.endswith("다"):
+            plain += 1
+        else:
+            other += 1
+    return formal, polite, plain, other
 
 
 def hard_violations(m):

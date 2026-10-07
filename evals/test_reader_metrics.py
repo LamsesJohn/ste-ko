@@ -46,6 +46,14 @@ class ReaderMetricsTest(unittest.TestCase):
         text = "원인은 포트 설정이다. 서버가 5432 포트를 열지 않았다.\n\n1. 설정 파일을 연다.\n2. 포트를 확인한다."
         self.assertEqual(hard_violations(analyze(text)), 0)
 
+    def test_new_closers_are_detected(self):
+        for text in ("문서의 성격을 알려주시면 다듬어 드릴 수 있습니다.", "필요하시면 말씀해 주세요."):
+            self.assertGreaterEqual(analyze(text)["closers"], 1, text)
+
+    def test_tone_is_counted_by_sentence_ending(self):
+        m = analyze("결론입니다. 이렇게 하면 돼요. 서버가 멈춘다. 표.")
+        self.assertEqual((m["end_formal"], m["end_polite"], m["end_plain"]), (1, 1, 1))
+
 
 if __name__ == "__main__":
     unittest.main()
