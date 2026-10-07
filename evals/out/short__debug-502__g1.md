@@ -1,22 +1,22 @@
-502 오류는 프록시가 업스트림 앱 서버에서 정상 응답을 받지 못했다는 뜻이므로, 앱 서버 상태부터 확인하세요.
+502는 프록시나 로드밸런서가 뒤쪽 앱 서버에서 정상 응답을 받지 못한 상태이므로, 프록시 에러 로그부터 확인하세요.
 
-이 환경의 실제 서버 구성과 로그는 아직 확인하지 않았습니다. 아래는 일반적인 점검 순서입니다.
+저는 아직 서버에 접속하지 않았습니다. 아래는 일반적인 점검 순서이며 nginx 기준입니다.
 
-1. 앱 프로세스가 살아 있는지 확인합니다. `systemctl status <서비스>`를 실행합니다.
-2. 앱이 대기 중인 포트를 확인합니다. `ss -tlnp`를 실행합니다.
-3. 서버 안에서 앱에 직접 요청합니다. `curl -i http://127.0.0.1:<포트>/`를 실행합니다.
-4. 프록시 에러 로그를 읽습니다. nginx는 `/var/log/nginx/error.log`입니다.
-5. 앱 로그에서 크래시, 메모리 부족, 타임아웃을 찾습니다. `journalctl -u <서비스> -n 100`을 실행합니다.
-6. 프록시 설정의 업스트림 주소와 포트가 앱 설정과 같은지 비교합니다.
-7. 최근 배포나 설정 변경 이력을 확인합니다.
+1. 프록시 에러 로그를 봅니다: `tail -n 100 /var/log/nginx/error.log`
+2. 앱 프로세스 상태를 봅니다: `systemctl status <서비스명>`
+3. 프록시를 거치지 않고 앱을 직접 호출합니다: `curl -i http://127.0.0.1:<포트>/`
+4. 앱 로그를 봅니다: `journalctl -u <서비스명> -n 100`
+5. 메모리 부족으로 종료됐는지 봅니다: `dmesg | grep -i oom`
+6. 프록시 설정을 검증합니다: `nginx -t`
+7. 설정의 upstream 주소, 포트, 소켓 경로를 앱 설정과 대조합니다.
 
-nginx 에러 로그 문구로 원인을 좁힐 수 있습니다.
+에러 로그 문구별 원인은 다음과 같습니다.
 
-| 로그 문구 | 가능한 원인 |
+| 로그 문구 | 의심 원인 |
 |---|---|
-| `connect() failed (111: Connection refused)` | 앱이 꺼졌거나 포트가 다름 |
-| `upstream timed out` | 앱이 느리거나 멈춤 |
-| `upstream prematurely closed connection` | 요청 처리 중 앱이 종료됨 |
-| `no live upstreams` | 모든 업스트림이 실패 상태 |
+| `connect() failed (111: Connection refused) while connecting to upstream` | 앱이 꺼졌거나 포트가 다릅니다 |
+| `upstream prematurely closed connection while reading response header from upstream` | 앱이 요청 처리 중 죽었습니다 |
+| `upstream timed out (110: Connection timed out) while reading response header from upstream` | 앱 응답이 너무 느립니다 |
+| `connect() to unix:/...sock failed (13: Permission denied)` | 소켓 파일 권한 문제입니다 |
 
-사용하는 프록시 종류와 에러 로그 몇 줄을 알려 주면 원인을 더 좁히겠습니다.
+Apache, ALB, Cloudflare 등 다른 구성이면 로그 위치가 다릅니다. 사용 중인 구성과 에러 로그 원문을 알려 주시면 원인을 좁히겠습니다.

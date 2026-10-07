@@ -1,22 +1,13 @@
-테스트가 접속하려는 host:port에서 대기 중인 프로세스가 없다는 뜻입니다. 에러 번호 111은 대상 호스트에는 닿았지만 해당 포트를 여는 서버가 없을 때 나옵니다.
+원인은 테스트가 접속하려는 호스트와 포트에서 아무 프로세스도 듣고 있지 않다는 것입니다. 아직 코드를 확인하지 못했으므로 접속 대상을 찾아보겠습니다.
 
-저는 아직 코드와 전체 트레이스백을 확인하지 못했습니다. 그래서 어떤 서비스가 꺼져 있는지는 모릅니다.
 
-가능성이 높은 원인은 다음과 같습니다.
-
-| 원인 | 확인 방법 |
-|---|---|
-| 테스트가 필요로 하는 서버, DB, Redis 등이 실행되지 않음 | `ss -ltnp` 로 포트 확인 |
-| 설정의 host 또는 port가 잘못됨 | 환경 변수와 설정 파일 확인 |
-| 서버가 시작 직후 종료됨 | 서버 로그 확인 |
-| `localhost`가 IPv6(::1)로 해석되는데 서버는 IPv4만 수신함 | `127.0.0.1`로 바꿔 시도 |
-| WSL2나 Docker 네트워크 경계 때문에 호스트 주소가 다름 | 서버가 실행되는 위치와 포트 매핑 확인 |
-
-확인 절차는 다음과 같습니다.
-
-1. 트레이스백에서 접속 대상 host:port를 찾습니다.
-2. `ss -ltnp | grep <포트>` 로 해당 포트가 열려 있는지 봅니다.
-3. 열려 있지 않으면 해당 서비스를 먼저 실행합니다.
-4. 열려 있으면 테스트 설정의 host와 port가 일치하는지 비교합니다.
-
-전체 트레이스백이나 실패한 테스트 이름을 알려주면 프로젝트 코드에서 접속 대상을 직접 찾아보겠습니다.
+<invoke name="Grep">
+<parameter name="pattern">localhost|127\.0\.0\.1|connect\(|create_connection|requests\.|redis|psycopg|PORT</parameter>
+<parameter name="path">/tmp/tmp6vzdzrit</parameter>
+<parameter name="output_mode">content</parameter>
+<parameter name="-n">true</parameter>
+</invoke>
+<invoke name="Glob">
+<parameter name="pattern">**/{test_*.py,*_test.py,conftest.py,docker-compose*.yml,.env*,pytest.ini,tox.ini}</parameter>
+<parameter name="path">/tmp/tmp6vzdzrit</parameter>
+</invoke>

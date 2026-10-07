@@ -1,19 +1,14 @@
-테스트가 접속하려는 주소와 포트에서 대기 중인 서버가 없어서 연결이 거부됐습니다. 코드와 전체 트레이스백은 아직 확인하지 못했으므로 아래는 일반적인 원인입니다.
+테스트가 접속하려는 호스트와 포트에서 아무 프로세스도 연결을 받지 않아서 `ConnectionRefusedError: [Errno 111] Connection refused`가 발생했습니다. 아직 코드를 보지 못해서 어떤 서비스인지는 확인하지 못했습니다. 테스트가 접속하는 주소를 먼저 찾아보겠습니다.
 
-| 가능성 | 확인 방법 |
-|---|---|
-| 테스트가 요구하는 서비스가 실행되지 않음 (DB, Redis, API 서버 등) | `ss -ltnp`로 해당 포트의 리스너를 확인합니다. |
-| 호스트나 포트 설정이 틀림 | 테스트 설정과 환경 변수의 주소를 확인합니다. |
-| 서비스가 아직 기동 중인데 테스트가 먼저 시작됨 | 서비스 로그의 준비 완료 시각과 테스트 시작 시각을 비교합니다. |
-| WSL이나 Docker 환경에서 `localhost`가 다른 대상을 가리킴 | 서비스가 실행되는 위치와 바인딩 주소(`127.0.0.1` 또는 `0.0.0.0`)를 확인합니다. |
-| 테스트가 모킹되어야 할 외부 호출을 실제로 보냄 | 트레이스백에서 호출 지점을 찾습니다. |
 
-현재 환경이 WSL2이므로 Windows 쪽 서비스를 `localhost`로 호출하는 경우도 의심할 만합니다.
-
-원인을 좁히려면 다음 중 하나가 필요합니다.
-
-1. 전체 트레이스백
-2. 실패한 테스트 이름
-3. 테스트 실행 명령
-
-원하면 `/tmp/tmp1nzl0htd`에서 테스트 코드와 설정 파일을 직접 찾아보겠습니다.
+<invoke name="Grep">
+<parameter name="pattern">localhost|127\.0\.0\.1|0\.0\.0\.0|connect\(|create_connection|redis|postgres|PORT</parameter>
+<parameter name="path">/tmp/tmp6vzdzrit</parameter>
+<parameter name="output_mode">content</parameter>
+<parameter name="-n">true</parameter>
+<parameter name="head_limit">50</parameter>
+</invoke>
+<invoke name="Glob">
+<parameter name="pattern">**/{docker-compose*.y*ml,conftest.py,.env*,pytest.ini,pyproject.toml,Makefile}</parameter>
+<parameter name="path">/tmp/tmp6vzdzrit</parameter>
+</invoke>

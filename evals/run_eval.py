@@ -40,7 +40,8 @@ RULES = """답변 문체 규칙:
 - 능동태로 쓴다. 한 대상에는 한 단어만 쓴다.
 - 줄표(—)와 세미콜론(;)을 쓰지 않는다. 인사말과 맺음말을 쓰지 않는다.
 - 확인한 것과 확인하지 못한 것을 구분한다. 확신 수준을 바꾸지 않는다.
-- 절차는 번호 목록, 비교는 표로 쓴다."""
+- 절차는 번호 목록, 비교는 표로 쓴다.
+- 사용자가 준 오류 문구와 로그는 원문 그대로 인용한다."""
 
 
 def call(prompt, cond, model, effort, cwd):
@@ -85,19 +86,28 @@ def summarize(args):
             "sentences_over_limit", "em_dash", "semicolon", "bold_spans", "headers",
             "list_items", "table_rows", "openers", "closers", "stock_phrases",
             "nominalizations", "end_formal", "end_polite", "end_plain"]
+    quotes = {s["id"]: s["must_quote"] for s in json.loads(SCENARIOS.read_text(encoding="utf-8"))
+              if s.get("must_quote")}
     rows = {}
     for cond in CONDITIONS:
         ms = []
+        q_pass = q_total = 0
         for p in sorted(out.glob(f"{cond}__*__g*.md")):
-            ms.append(analyze(p.read_text(encoding="utf-8")))
+            text = p.read_text(encoding="utf-8")
+            ms.append(analyze(text))
+            sid = p.name.split("__")[1]
+            if sid in quotes:
+                q_total += 1
+                q_pass += all(q in text for q in quotes[sid])
         if not ms:
             continue
         n = len(ms)
         row = {k: round(sum(m[k] for m in ms) / n, 1) for k in keys}
         row["hard_violations"] = round(sum(hard_violations(m) for m in ms) / n, 2)
         row["n"] = n
+        row["error_quote_pass"] = f"{q_pass}/{q_total}"
         rows[cond] = row
-    cols = ["n"] + keys + ["hard_violations"]
+    cols = ["n"] + keys + ["hard_violations", "error_quote_pass"]
     print("\nmean per answer")
     print("| metric | " + " | ".join(rows) + " |")
     print("|---|" + "---|" * len(rows))
